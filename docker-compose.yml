@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:13.1-alpine
+    container_name: postgres
+    restart: on-failure
+    env_file:
+      - ./.env
+    ports:
+      - "5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    restart: on-failure
+    ports:
+      - "80:80"
+    volumes:
+      - fampay_data:/fampay/static
+      - ./log:/var/log/nginx
+    depends_on:
+      - fampay
+
+  fampay:
+    build: ./fampay
+    container_name: fampay
+    restart: on-failure
+    command: sh -c "/fampay/entrypoint.sh"
+    volumes:
+      - ./fampay/:/fampay/
+      - fampay_data:/static
+    ports:
+      - "8000"
+    env_file:
+      - ./.env
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
+  fampay_data:
